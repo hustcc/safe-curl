@@ -19,7 +19,7 @@ export function buildCheckAddress(opts: SafeCurlOptions): CheckAddressFunction {
 
   const hostnameExceptionList = opts.hostnameExceptionList || [];
 
-  return (ip, family, hostname) => {
+  return (ip, _family, hostname) => {
     // 1. Hostname exception — always allow
     if (hostname && hostnameExceptionList.includes(hostname)) {
       return true;

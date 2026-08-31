@@ -20,26 +20,27 @@ export function prefixToMask(prefixLen: number): number {
   return prefixLen === 0 ? 0 : (~((1 << (32 - prefixLen)) - 1)) >>> 0;
 }
 
-/** Expand a compressed IPv6 string into 8 groups. */
-function expandIPv6(ip: string): number[] {
+/** Expand a compressed IPv6 string into groups (default 8, or 6 for mixed notation). */
+function expandIPv6(ip: string, target = 8): number[] {
   const parts = ip.split('::');
   const left = parts[0] ? parts[0].split(':').filter(Boolean).map(h => parseInt(h || '0', 16)) : [];
   const right = parts[1] ? parts[1].split(':').filter(Boolean).map(h => parseInt(h || '0', 16)) : [];
-  const missing = 8 - left.length - right.length;
-  return [...left, ...Array(missing).fill(0), ...right];
+  const missing = target - left.length - right.length;
+  return [...left, ...Array(Math.max(0, missing)).fill(0), ...right];
 }
 
 /** Convert an IPv6 string to a 128-bit BigInt. */
 function ip6ToBigInt(ip: string): bigint {
-  // Mixed notation ::ffff:x.x.x.x
+  // Mixed notation ::ffff:x.x.x.x or ::x.x.x.x
   if (ip.includes('.')) {
     const idx = ip.lastIndexOf(':');
-    const v6part = ip.slice(0, idx);
+    // Handle '::' — the separator might be the second colon
+    const v6End = idx > 0 && ip[idx - 1] === ':' ? idx - 1 : idx;
+    const v6part = ip.slice(0, v6End);
     const v4part = ip.slice(idx + 1);
-    const groups = expandIPv6(v6part);
+    const groups = expandIPv6(v6part, 6);
     const v4 = ip4ToInt(v4part);
-    groups[6] = (v4 >>> 16) & 0xffff;
-    groups[7] = v4 & 0xffff;
+    groups.push((v4 >>> 16) & 0xffff, v4 & 0xffff);
     let result = 0n;
     for (let i = 0; i < 8; i++) result = (result << 16n) | BigInt(groups[i]!);
     return result;

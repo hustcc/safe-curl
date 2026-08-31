@@ -93,7 +93,24 @@ describe('cidrParse — IPv6', () => {
     expect(r!.type).toBe('ipv6');
   });
 
-  it('returns null for invalid prefix', () => {
+  it('parses mixed notation ::ffff:x.x.x.x', () => {
+    const r = cidrParse('::ffff:10.0.0.1');
+    expect(r).not.toBeNull();
+    expect(r!.type).toBe('ipv6');
+    expect(r!.mask).toBe(0xffffffffffffffffffffffffffffffffn);
+    const m = cidrMatcher(['::ffff:10.0.0.1']);
+    expect(m('::ffff:10.0.0.1')).toBe(true);
+  });
+
+  it('parses mixed notation ::x.x.x.x', () => {
+    const r = cidrParse('::10.0.0.1');
+    expect(r).not.toBeNull();
+    expect(r!.type).toBe('ipv6');
+    const m = cidrMatcher(['::10.0.0.1']);
+    expect(m('::10.0.0.1')).toBe(true);
+  });
+
+  it('returns null for invalid v6 prefix', () => {
     expect(cidrParse('fe80::/129')).toBeNull();
   });
 });
