@@ -43,6 +43,19 @@ describe('check — hostname (DNS)', () => {
     expect(r.safe).toBe(true);
   });
 
+  it('auto-prepends https:// for bare hostname', async () => {
+    const addr = buildCheckAddress({ ipBlackList: ['127.0.0.0/8', '10.0.0.0/8'] });
+    const r = await check('httpbin.org/get', addr);
+    expect(r.safe).toBe(true);
+    expect(r.hostname).toBe('httpbin.org');
+  });
+
+  it('keeps http:// protocol when present', async () => {
+    const addr = buildCheckAddress({ ipBlackList: ['127.0.0.0/8'] });
+    const r = await check('http://example.com/', addr);
+    expect(r.hostname).toBe('example.com');
+  });
+
   it('returns safe:false for unresolvable hostname', async () => {
     const addr = buildCheckAddress({});
     const r = await check('http://invalid.local.test/', addr);
