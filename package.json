@@ -1,0 +1,46 @@
+{
+  "name": "safe-curl",
+  "version": "0.1.0",
+  "description": "SSRF-safe HTTP client — prevent Server-Side Request Forgery by IP filtering",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ssrf",
+    "security",
+    "curl",
+    "http-client",
+    "safe-curl"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hustcc/safe-curl.git"
+  },
+  "dependencies": {
+    "urllib": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
