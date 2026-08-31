@@ -1,6 +1,6 @@
 {
   "name": "safe-curl",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "SSRF-safe HTTP client — prevent Server-Side Request Forgery by IP filtering",
   "type": "module",
   "main": "./dist/index.js",
@@ -16,7 +16,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
     "test": "vitest run",
     "prepublishOnly": "npm run build"
   },
@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.4.0",
+    "tsup": "^8.5.1",
     "typescript": "^5.4.0",
     "vitest": "^1.6.0"
   },
