@@ -16,6 +16,7 @@ export function ip4ToInt(ip: string): number {
  * Create a netmask from a prefix length (0–32).
  */
 export function prefixToMask(prefixLen: number): number {
+  if (prefixLen < 0 || prefixLen > 32) return 0;
   return prefixLen === 0 ? 0 : (~((1 << (32 - prefixLen)) - 1)) >>> 0;
 }
 
@@ -31,7 +32,7 @@ export function cidrParse(cidr: string): { network: number; mask: number } | nul
 
   // Only handle IPv4
   if (isIP(ip) !== 4) return null;
-  if (prefix < 0 || prefix > 32) return null;
+  if (isNaN(prefix) || prefix < 0 || prefix > 32) return null;
 
   const network = ip4ToInt(ip);
   const mask = prefixToMask(prefix);
