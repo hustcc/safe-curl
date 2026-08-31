@@ -5,9 +5,9 @@
 [![build](https://github.com/hustcc/safe-curl/actions/workflows/build.yml/badge.svg)](https://github.com/hustcc/safe-curl/actions/workflows/build.yml)
 [![license](https://img.shields.io/npm/l/safe-curl.svg)](LICENSE)
 
-👮🏻‍♀️ Secure `cURL` for preventing `SSRF` Attacks for AI agent in NodeJS runtime. SSRF-safe HTTP client — prevent Server-Side Request Forgery by IP filtering.
+👮🏻‍♀️ SSRF-safe HTTP client for Node.js — prevent Server-Side Request Forgery by IP/CIDR filtering. Supports **IPv4 and IPv6**.
 
-`safe-curl` wraps [urllib](https://github.com/node-modules/urllib) with a `checkAddress` callback that blocks requests to internal/blacklisted IP addresses.
+Wraps [urllib](https://github.com/node-modules/urllib) with a `checkAddress` callback that blocks requests to internal/blacklisted IPs.
 
 ## Installation
 
@@ -20,7 +20,7 @@ npm install safe-curl
 ```ts
 import { safeCurl } from 'safe-curl';
 
-const curl = safeCurl({
+const { check, curl } = safeCurl({
   ipBlackList: [
     '127.0.0.0/8',    // loopback
     '10.0.0.0/8',     // private
@@ -31,11 +31,15 @@ const curl = safeCurl({
   ],
 });
 
+// Pre-flight check
+const { safe } = await check('http://localhost:3000/api');
+// → { safe: false, hostname: 'localhost', ips: ['127.0.0.1', '::1'] }
+
 // Blocks requests to internal IPs → throws
 await curl('http://10.0.0.1/admin');
 // → Error: illegal address
 
-// Requests to public endpoints work normally
+// Public endpoints work normally
 const { data, status } = await curl('https://api.example.com/data', {
   dataType: 'json',
 });
@@ -43,68 +47,81 @@ const { data, status } = await curl('https://api.example.com/data', {
 
 ## API
 
-### `safeCurl(opts) → curl(url, options)`
+### `safeCurl(opts) → { curl, check }`
 
-Creates an SSRF-safe HTTP request function.
+Returns an object with two methods sharing the same security config.
 
 #### Options
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `checkAddress` | `(ip, family, hostname) => boolean` | Custom address check. Return `true` to allow, `false` to block. Has the highest priority. |
-| `ipBlackList` | `string[]` | IP/CIDR entries to block. e.g. `['127.0.0.1', '10.0.0.0/8']` |
-| `ipWhiteList` | `string[]` | IP/CIDR entries exempt from the blacklist. Checked before blacklist. |
-| `hostnameExceptionList` | `string[]` | Hostnames that bypass IP checking entirely. |
+| `checkAddress` | `(ip, family, hostname) => boolean` | Custom address check. `true` = allow, `false` = block. Highest priority. |
+| `ipBlackList` | `string[]` | IPv4/IPv6 CIDR entries to block. e.g. `['127.0.0.1', '10.0.0.0/8', 'fe80::/10']` |
+| `ipWhiteList` | `string[]` | CIDR entries exempt from the blacklist. Checked before blacklist. |
+| `hostnameWhiteList` | `string[]` | Hostnames that bypass IP checking entirely. |
 
-Priority: `checkAddress` > `hostnameExceptionList` > `ipWhiteList` > `ipBlackList`
+Priority: `checkAddress` > `hostnameWhiteList` > `ipWhiteList` > `ipBlackList`
 
-#### Return value
+#### `curl(url, options?)`
 
-Returns `curl(url, options)` — an async function with the same signature as [urllib's `request`](https://github.com/node-modules/urllib). Returns `HttpClientResponse<T>`.
+Same signature as [urllib's `request`](https://github.com/node-modules/urllib). Returns `HttpClientResponse<T>`.
+
+#### `check(url)`
+
+Pre-flight check — resolves the URL's hostname and checks all IPs against the security rules. No HTTP request is made.
+
+Returns `{ safe: boolean, hostname: string, ips: string[] }`.
 
 ## Examples
 
 ### Custom checkAddress
 
 ```ts
-const curl = safeCurl({
-  checkAddress(ip, family, hostname) {
-    // Only allow requests to 1.1.1.1
+const { curl } = safeCurl({
+  checkAddress(ip) {
     return ip === '1.1.1.1';
   },
 });
 ```
 
-### Whitelist exceptions
+### IP whitelist exceptions
 
 ```ts
-const curl = safeCurl({
+const { curl } = safeCurl({
   ipBlackList: ['10.0.0.0/8'],
-  ipWhiteList: ['10.0.1.5'], // allow this specific IP
+  ipWhiteList: ['10.0.1.5'],
 });
 ```
 
-### Hostname exceptions
+### Hostname whitelist
 
 ```ts
-const curl = safeCurl({
+const { curl } = safeCurl({
   ipBlackList: ['127.0.0.0/8'],
-  hostnameExceptionList: ['localhost'], // always allow localhost
+  hostnameWhiteList: ['localhost'],
 });
+```
+
+### Pre-flight check
+
+```ts
+const { check, curl } = safeCurl({ ipBlackList: ['127.0.0.0/8', '10.0.0.0/8'] });
+
+const { safe, ips } = await check('http://user-input-url/api');
+if (!safe) throw new Error(`Blocked IPs: ${ips.join(', ')}`);
 ```
 
 ## How It Works
 
-1. When a request is made, the target hostname is resolved via DNS.
-2. Before the TCP connection is established, every resolved IP is checked by `checkAddress`.
-3. If an IP is blocked (`false`), the connection is aborted with an error before any data is sent.
-4. Direct IP requests (e.g. `http://10.0.0.1/`) are also caught — no DNS bypass.
+1. `curl()` — DNS resolves the target hostname, then `checkAddress` blocks blacklisted IPs **before** the TCP connection.
+2. `check()` — same DNS + IP check, but doesn't connect. Useful for validating user-supplied URLs.
+3. Direct IP requests (`http://10.0.0.1/`) are also caught — no DNS bypass.
 
 ```
-curl('http://internal.corp.com')
+check('http://internal.corp.com')
   → DNS lookup → [10.0.0.5]
   → checkAddress('10.0.0.5', 4, 'internal.corp.com')
-  → false → throw Error('illegal address')
+  → false → { safe: false }
 ```
 
 ## License
