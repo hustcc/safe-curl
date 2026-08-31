@@ -29,7 +29,12 @@ describe('buildCheckAddress', () => {
     expect(fn('127.0.0.1', 4, 'other.host')).toBe(false);
   });
 
-  it('skips IPv6 (always allows)', () => {
+  it('blocks IPv6 when in blacklist', () => {
+    const fn = buildCheckAddress({ ipBlackList: ['fe80::/10'] });
+    expect(fn('fe80::1', 6, '')).toBe(false);
+  });
+
+  it('allows IPv6 when not in blacklist', () => {
     const fn = buildCheckAddress({ ipBlackList: ['10.0.0.0/8'] });
     expect(fn('fe80::1', 6, '')).toBe(true);
   });
