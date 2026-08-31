@@ -19,7 +19,7 @@ export async function check(
   url: string | URL,
   check: CheckAddressFunction,
 ): Promise<CheckUrlResult> {
-  const raw = typeof url === 'string' ? new URL(url).hostname : url.hostname;
+  const raw = typeof url === 'string' ? new URL(url.includes('://') ? url : `https://${url}`).hostname : url.hostname;
   // Strip brackets from IPv6 hostnames (WHATWG spec inconsistency across Node versions)
   const hostname = raw.startsWith('[') ? raw.slice(1, -1) : raw;
 

@@ -1,6 +1,6 @@
 {
   "name": "safe-curl",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "SSRF-safe HTTP client — prevent Server-Side Request Forgery by IP filtering",
   "type": "module",
   "main": "./dist/index.js",
