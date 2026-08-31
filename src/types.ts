@@ -26,5 +26,5 @@ export interface SafeCurlOptions {
   /**
    * Hostnames that should always be allowed, bypassing IP checks.
    */
-  hostnameExceptionList?: string[];
+  hostnameWhiteList?: string[];
 }

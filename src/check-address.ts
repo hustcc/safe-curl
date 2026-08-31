@@ -4,7 +4,7 @@ import type { SafeCurlOptions } from './types.js';
 
 /**
  * Build a checkAddress callback from declarative config
- * (ipBlackList, ipWhiteList, hostnameExceptionList).
+ * (ipBlackList, ipWhiteList, hostnameWhiteList).
  *
  * Mirrors egg-security's preprocessConfig logic.
  */
@@ -17,11 +17,11 @@ export function buildCheckAddress(opts: SafeCurlOptions): CheckAddressFunction {
     ? [cidrMatcher(opts.ipWhiteList!)]
     : [];
 
-  const hostnameExceptionList = opts.hostnameExceptionList || [];
+  const hostnameWhiteList = opts.hostnameWhiteList || [];
 
   return (ip, _family, hostname) => {
     // 1. Hostname exception — always allow
-    if (hostname && hostnameExceptionList.includes(hostname)) {
+    if (hostname && hostnameWhiteList.includes(hostname)) {
       return true;
     }
 

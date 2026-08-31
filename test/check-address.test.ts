@@ -23,7 +23,7 @@ describe('buildCheckAddress', () => {
   it('allows by hostname exception first', () => {
     const fn = buildCheckAddress({
       ipBlackList: ['127.0.0.0/8'],
-      hostnameExceptionList: ['localhost'],
+      hostnameWhiteList: ['localhost'],
     });
     expect(fn('127.0.0.1', 4, 'localhost')).toBe(true);
     expect(fn('127.0.0.1', 4, 'other.host')).toBe(false);
